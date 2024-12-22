@@ -1,5 +1,5 @@
 // src/pages/Auth.js
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Container,
   Typography,
@@ -7,20 +7,51 @@ import {
   Button,
   Box,
 } from '@mui/material';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const Auth = () => {
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    async function verifyUser() {
+      try {
+        const res = await axios.get(`http://localhost:3001/auth/verify-token`, { withCredentials: true });
+        console.log(res.data);
+        if (res.data.status === 200) {
+          if (res.data.data.user.userrole === "student") {
+            navigate("/student-dashboard");
+          } else if (res.data.data.user.userrole === "mentor") {
+            navigate("/mentor-dashboard");
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    verifyUser();
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     // Handle login or signup logic here
     console.log(`Email: ${email}, Password: ${password}, Is Login: ${isLogin}`);
     // Reset fields after submit
-    setEmail('');
-    setPassword('');
-  };
+    try {
+      const res = await axios.post(`http://localhost:3001/auth/${isLogin ? 'login' : 'signup'}`, {
+        email,
+        password
+      }, { withCredentials: true });
+      if (res.data.status === 200) {
+        navigate("/student-dashboard");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   return (
     <Container maxWidth="sm" sx={{ mt: 4 }}>

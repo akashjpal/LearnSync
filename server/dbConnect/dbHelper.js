@@ -12,9 +12,9 @@ class DbHelper{
         }
     }
 
-    async addUser(username,email,password){
+    async addUser(email,password){
         try{
-            const result = await this.client.query("INSERT INTO userInfo (username,email,passwordhash) VALUES ($1,$2,$3)",[username,email,password]);
+            const result = await this.client.query("INSERT INTO userInfo (email,passwordhash) VALUES ($1,$2)",[email,password]);
             console.log(result);
             return result;
         }catch(error){

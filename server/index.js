@@ -13,14 +13,24 @@
 
 const express = require('express');
 const bodyParser = require('body-parser')
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
+
 const app = express();
 const authRoutes = require("./routes/authRoutes");
+const homeRoutes = require("./routes/homeRoutes");
 
 const port = 3001;
 
 // used by body parser to parse the user posted data in json format
 app.use(bodyParser.json());
+app.use(cors({
+  origin: 'http://localhost:3000', // Replace with your client URL
+  credentials: true,              
+}));
+app.use(cookieParser());
 app.use("/auth",authRoutes);
+app.use("/home",homeRoutes);
 
 app.get('/', (req, res) => {
   res.send('Hello World!');
