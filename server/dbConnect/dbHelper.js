@@ -108,9 +108,125 @@ class DbHelper{
             console.log("Error while updating mentor");
         }
     }
+
+    // To handle Projects
+    async addProject(project_id, name, description,mentorId){
+        try{
+            const result = await this.client.query("INSERT INTO project (project_id, name, description,mentorId) VALUES ($1,$2,$3,$4)",[project_id, name, description,mentorId]);
+            console.log(result);
+            return result;
+        }catch(error){
+            console.log(error);
+            console.log("Error while adding project");
+        }
+    }
+    async editProject(project_id, name, description,mentorId){
+        try{
+            const result = await this.client.query("UPDATE project SET name = $2, description = $3, mentorId=$4 WHERE project_id = $1",[project_id, name, description,mentorId]);
+            console.log(result);
+            return result;
+        }catch(error){
+            console.log(error);
+            console.log("Error while updating project");
+        }
+    }
+    async getProject(project_id){
+        try{
+            const result = await this.client.query("SELECT * FROM project WHERE project_id = $1",[project_id]);
+            console.log(result.rows[0]);
+            return result.rows[0];
+        }catch(error){
+            console.log(error);
+        }
+    }
+    async deleteProject(project_id){
+        try{
+            const result = await this.client.query("DELETE FROM project WHERE project_id = $1",[project_id]);
+            console.log(result);
+            return result;
+        }catch(error){
+            console.log(error);
+            console.log("Error while deleting project");
+        }
+    }
+
+    // To assign projects to students
+    async assignProject(project_id, student_roll_no){
+        try{
+            const result = await this.client.query("INSERT INTO project_student (project_id, student_roll_no) VALUES ($1,$2)",[project_id, student_roll_no]);
+            console.log(result);
+            return result;
+        }catch(error){
+            console.log(error);
+            console.log("Error while assigning project");
+        }
+    }
+    async getAssignedProject(project_id){
+        try{
+            const result = await this.client.query("SELECT * FROM project_student WHERE project_id = $1",[project_id]);
+            console.log(result.rows[0]);
+            return result.rows[0];
+        }catch(error){
+            console.log(error);
+        }
+    }
+    async deleteAssignedProject(project_id){
+        try{
+            const result = await this.client.query("DELETE FROM project_student WHERE project_id = $1",[project_id]);
+            console.log(result);
+            return result;
+        }catch(error){
+            console.log(error);
+            console.log("Error while deleting assigned project");
+        }
+    }
+
+    // To assign tasks to students
+    async assignTask(project_id, student_roll_no,description){
+        try{
+            const result = await this.client.query("INSERT INTO task (project_id, student_roll_no,description) VALUES ($1,$2)",[project_id, student_roll_no,description]);
+            console.log(result);
+            return result;
+        }catch(error){
+            console.log(error);
+            console.log("Error while assigning task");
+        }
+    }
+
+    async getAssignedTask(project_id){
+        try{
+            const result = await this.client.query("SELECT * FROM task WHERE project_id = $1",[project_id]);
+            console.log(result.rows[0]);
+            return result.rows[0];
+        }catch(error){
+            console.log(error);
+        }
+    }
+    async editAssignedTask(project_id, student_roll_no,description){
+        try{
+            const result = await this.client.query("UPDATE task SET description = $3 WHERE project_id = $1 AND student_roll_no = $2",[project_id, student_roll_no,description]);
+            console.log(result);
+            return result;
+        }catch(error){
+            console.log(error);
+            console.log("Error while updating assigned task");
+        }
+    }
+    async deleteAssignedTask(project_id, student_roll_no){
+        try{
+            const result = await this.client.query("DELETE FROM task WHERE project_id = $1 AND student_roll_no = $2",[project_id, student_roll_no]);
+            console.log(result);
+            return result;
+        }catch(error){
+            console.log(error);
+            console.log("Error while deleting assigned task");
+        }
+    }
     async releaseClient(){
         await this.client.release();
     }
 }
+
+
 
 module.exports = DbHelper;
