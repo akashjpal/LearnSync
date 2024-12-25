@@ -20,7 +20,8 @@ const app = express();
 const authRoutes = require("./routes/authRoutes");
 const homeRoutes = require("./routes/homeRoutes");
 const adminRoutes = require("./routes/adminRoutes");
-
+const projectRoutes = require("./routes/projectRoutes");
+const assignStudentsRoutes = require("./routes/assignStudentRoutes");
 const port = 3001;
 
 // used by body parser to parse the user posted data in json format
@@ -33,6 +34,8 @@ app.use(cookieParser());
 app.use("/auth",authRoutes);
 app.use("/home",homeRoutes);
 app.use("/admin",adminRoutes);
+app.use("/projects",projectRoutes);
+app.use("/assign",assignStudentsRoutes);
 
 app.get('/', (req, res) => {
   res.send('Hello World!');

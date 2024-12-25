@@ -110,9 +110,9 @@ class DbHelper{
     }
 
     // To handle Projects
-    async addProject(project_id, name, description,mentorId){
+    async addProject(name, description,mentorId){
         try{
-            const result = await this.client.query("INSERT INTO project (project_id, name, description,mentorId) VALUES ($1,$2,$3,$4)",[project_id, name, description,mentorId]);
+            const result = await this.client.query("INSERT INTO project ( name, description,mentorId) VALUES ($1,$2,$3)",[ name, description,mentorId]);
             console.log(result);
             return result;
         }catch(error){
@@ -149,6 +149,16 @@ class DbHelper{
             console.log("Error while deleting project");
         }
     }
+    async getAllProjects(mentorId){
+        try{
+            const result = await this.client.query("SELECT * FROM project WHERE mentorId = $1",[mentorId]);
+            console.log(result.rows);
+            return result.rows;
+        }catch(error){
+            console.log(error);
+        }
+    }
+
 
     // To assign projects to students
     async assignProject(project_id, student_roll_no){
@@ -158,7 +168,7 @@ class DbHelper{
             return result;
         }catch(error){
             console.log(error);
-            console.log("Error while assigning project");
+            console.log(" Error while assigning project");
         }
     }
     async getAssignedProject(project_id){
@@ -184,7 +194,7 @@ class DbHelper{
     // To assign tasks to students
     async assignTask(project_id, student_roll_no,description){
         try{
-            const result = await this.client.query("INSERT INTO task (project_id, student_roll_no,description) VALUES ($1,$2)",[project_id, student_roll_no,description]);
+            const result = await this.client.query("INSERT INTO task (project_id, student_roll_no,description) VALUES ($1,$2,$3)",[project_id, student_roll_no,description]);
             console.log(result);
             return result;
         }catch(error){
