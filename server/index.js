@@ -19,6 +19,7 @@ const cookieParser = require('cookie-parser');
 const app = express();
 const authRoutes = require("./routes/authRoutes");
 const homeRoutes = require("./routes/homeRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 const port = 3001;
 
@@ -31,6 +32,7 @@ app.use(cors({
 app.use(cookieParser());
 app.use("/auth",authRoutes);
 app.use("/home",homeRoutes);
+app.use("/admin",adminRoutes);
 
 app.get('/', (req, res) => {
   res.send('Hello World!');
