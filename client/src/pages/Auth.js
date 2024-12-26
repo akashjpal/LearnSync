@@ -33,7 +33,7 @@ const Auth = () => {
       }
     }
     verifyUser();
-  }, []);
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -41,13 +41,11 @@ const Auth = () => {
     console.log(`Email: ${email}, Password: ${password}, Is Login: ${isLogin}`);
     // Reset fields after submit
     try {
-      const res = await axios.post(`http://localhost:3001/auth/${isLogin ? 'login' : 'signup'}`, {
+      const res = await axios.post(`http://localhost:3001/auth/login`, {
         email,
         password
       }, { withCredentials: true });
-      if (res.data.status === 200) {
-        navigate("/student-dashboard");
-      }
+      console.log(res);
     } catch (error) {
       console.error(error);
     }

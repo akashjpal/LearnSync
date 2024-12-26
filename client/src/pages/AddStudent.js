@@ -2,12 +2,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Typography, TextField, Button, Box, Paper } from '@mui/material';
+import axios from 'axios';
 
 const AddStudent = ({ onAddStudent }) => {
   const [student, setStudent] = useState({
     name: '',
     course: '',
     rollNumber: '',
+    email: ''
   });
   const navigate = useNavigate();
 
@@ -16,12 +18,15 @@ const AddStudent = ({ onAddStudent }) => {
     setStudent((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (onAddStudent) {
-      onAddStudent(student); // Calls parent function if provided
+    try{
+      const res = await axios.post(`http://localhost:3001/admin/add-student`, {roll_no: student.rollNumber, name: student.name, course: student.course, email: student.email});
+      console.log(res);
+      navigate("/admin-dashboard");
+    }catch(error){
+      console.log(error);
     }
-    navigate('/admin-dashboard'); // Navigate back to the dashboard
   };
 
   return (
@@ -54,6 +59,16 @@ const AddStudent = ({ onAddStudent }) => {
             label="Roll Number"
             name="rollNumber"
             value={student.rollNumber}
+            onChange={handleChange}
+            required
+            sx={{ mb: 2 }}
+          />
+           <TextField
+            fullWidth
+            label="Email"
+            name="email"
+            type="email"
+            value={student.email}
             onChange={handleChange}
             required
             sx={{ mb: 2 }}

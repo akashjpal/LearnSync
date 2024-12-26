@@ -2,26 +2,53 @@ class DbHelper{
     constructor(client){
         this.client = client;
     }
-    async getUser(email){
-        try{
-            const result = await this.client.query("SELECT * FROM userInfo WHERE email = $1",[email]);
-            console.log(result.rows[0]);
-            return result.rows[0];
-        }catch(error){
-            console.log(error);
-        }
-    }
+    async getUser(email) {
+        const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@gmail.com";
+        const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin";
+      
+        try {
+          // Handle admin email
+          if (email === ADMIN_EMAIL) {
+            return { role: "admin", data: {email:ADMIN_EMAIL,password:ADMIN_PASSWORD} };
+          }
+      
+            // Query student table
+            const studentResult = await this.client.query(
+                "SELECT * FROM student WHERE email = $1",
+                [email]
+            );
 
-    async addUser(email,password){
-        try{
-            const result = await this.client.query("INSERT INTO userInfo (email,passwordhash) VALUES ($1,$2)",[email,password]);
-            console.log(result);
-            return result;
-        }catch(error){
-            console.log(error);
-            console.log("Error while adding user");
+            if (studentResult.rows.length > 0) {
+                return { role: "student", data: studentResult.rows[0] };
+            }
+
+            // Query mentor table
+            const mentorResult = await this.client.query(
+                "SELECT * FROM mentor WHERE email = $1",
+                [email]
+            );
+
+            if (mentorResult.rows.length > 0) {
+                return { role: "mentor", data: mentorResult.rows[0] };
+            }
+            // If no result is found, return null
+            return null;
+        } catch (error) {
+          console.error("Error fetching user:", error);
+          throw new Error("Failed to fetch user from the database");
         }
-    }
+      }
+      
+    // async addUser(email,password){
+    //     try{
+    //         const result = await this.client.query("INSERT INTO userInfo (email,passwordhash) VALUES ($1,$2)",[email,password]);
+    //         console.log(result);
+    //         return result;
+    //     }catch(error){
+    //         console.log(error);
+    //         console.log("Error while adding user");
+    //     }
+    // }
 
     async addStudent(roll_no, name, course,email,password){
         try{
@@ -31,6 +58,16 @@ class DbHelper{
         }catch(error){
             console.log(error);
             console.log("Error while adding student");
+        }
+    }
+
+    async getAllStudents(){
+        try{
+            const result = await this.client.query("SELECT * FROM student");
+            console.log(result.rows);
+            return result.rows;
+        }catch(error){
+            console.log(error);
         }
     }
 
@@ -63,6 +100,16 @@ class DbHelper{
         }catch(error){
             console.log(error);
             console.log("Error while updating student");
+        }
+    }
+
+    async getAllMentors(){
+        try{
+            const result = await this.client.query("SELECT * FROM mentor");
+            console.log(result.rows);
+            return result.rows;
+        }catch(error){
+            console.log(error);
         }
     }
 
