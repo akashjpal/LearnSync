@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Container,
   Typography,
@@ -13,100 +13,119 @@ import {
   Box,
   Modal,
   TextField,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
 } from '@mui/material';
 import { Edit, Delete } from '@mui/icons-material';
+import axios from 'axios';
 
 const ManageTasks = () => {
-  // Sample data for tasks
-  const [tasks, setTasks] = useState([
-    { id: 1, title: 'Complete project proposal', assignedTo: 'Pal Neha Awadhesh', deadline: '2024-11-15' },
-    { id: 2, title: 'Implement feature X', assignedTo: 'Pal Neha Jiledar', deadline: '2024-11-20' },
-  ]);
-
-  // List of students
+  const [tasks, setTasks] = useState([]);
   const [students] = useState([
-    { id: 1, name: 'Pal Neha Awadhesh' },
-    { id: 2, name: 'Pal Neha Jiledar' },
-    { id: 3, name: 'Student Three' },
   ]);
 
   const [openModal, setOpenModal] = useState(false);
-  const [newTask, setNewTask] = useState({ title: '', assignedTo: '', deadline: '' });
+  const [newTask, setNewTask] = useState({ student_roll_no: '', description: '' });
 
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => setOpenModal(false);
 
-  const handleAddTask = () => {
-    if (!newTask.title || !newTask.assignedTo || !newTask.deadline) {
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const response = await axios.post('http://localhost:3001/assign/get-tasks', { project_id: 3 });
+        const data = response.data;
+
+        if (!data || data.length === 0) {
+          setTasks([]);
+          return;
+        }
+        console.log(data);
+        const newArray = data.map((task,index) => ({
+          id: index+1,
+          description: task.description,
+          student_roll_no: task.student_roll_no,
+        }));
+        setTasks(newArray);
+        console.log("set modeule",newArray);
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+      }
+    }
+    fetchData();
+  }, [openModal]);
+
+  const handleAddTask = async () => {
+    if (!newTask.description || !newTask.student_roll_no) {
       alert('Please fill in all fields');
       return;
     }
 
-    const id = tasks.length ? Math.max(...tasks.map(task => task.id)) + 1 : 1;
-    setTasks([...tasks, { ...newTask, id }]);
-    setNewTask({ title: '', assignedTo: '', deadline: '' });
-    handleCloseModal();
+    try {
+      const res = await axios.post('http://localhost:3001/assign/add-task', {
+        project_id: 3,
+        description: newTask.description,
+        student_roll_no: newTask.student_roll_no,
+      });
+      console.log('Task added:', res.data);
+
+      setNewTask({ student_roll_no: '', description: '' });
+      handleCloseModal();
+    } catch (error) {
+      console.error('Error adding task:', error);
+    }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewTask(prev => ({ ...prev, [name]: value }));
+    setNewTask((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleEditTask = (id) => {
     alert(`Edit task with ID: ${id}`);
   };
 
-  const handleDeleteTask = (id) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this task?");
+  // check deletion logic
+  const handleDeleteTask = async (id) => {
+    const confirmDelete = window.confirm('Are you sure you want to delete this task?');
     if (confirmDelete) {
-      setTasks((prevTasks) => prevTasks.filter(task => task.id !== id));
+      try {
+        await axios.post('http://localhost:3001/assign/delete-task', { project_id: 3, student_roll_no: tasks[id-1].student_roll_no });
+        setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
+        console.log(`Task with ID ${id} deleted.`);
+      } catch (error) {
+        console.error('Error deleting task:', error);
+      }
     }
   };
 
   return (
     <Container>
-      <Typography variant="h4" gutterBottom>Manage Tasks</Typography>
+      <Typography variant="h4" gutterBottom>
+        Manage Tasks
+      </Typography>
       <Paper elevation={3} sx={{ padding: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>Task Management</Typography>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Task Management
+        </Typography>
         <Button variant="contained" color="primary" sx={{ mb: 2 }} onClick={handleOpenModal}>
           Add New Task
         </Button>
-        
+
         {/* Tasks Table */}
         <Table>
           <TableHead>
             <TableRow>
               <TableCell>ID</TableCell>
-              <TableCell>Task Title</TableCell>
-              <TableCell>Assigned To</TableCell>
-              <TableCell>Deadline</TableCell>
+              <TableCell>Description</TableCell>
+              <TableCell>Student Roll No</TableCell>
               <TableCell align="center">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {tasks.map((task) => (
-              <TableRow key={task.id}>
+            {tasks.map((task, index) => (
+              <TableRow key={task.student_roll_no + index}>
                 <TableCell>{task.id}</TableCell>
-                <TableCell>{task.title}</TableCell>
-                <TableCell>{task.assignedTo}</TableCell>
-                <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body2" sx={{ mr: 1 }}>{task.deadline}</Typography>
-                    <Box
-                      sx={{
-                        width: '50px',
-                        height: '5px',
-                        borderRadius: '5px',
-                        backgroundColor: new Date(task.deadline) < new Date() ? 'red' : 'green',
-                      }}
-                    />
-                  </Box>
-                </TableCell>
+                <TableCell>{task.description}</TableCell>
+                <TableCell>{task.student_roll_no}</TableCell>
                 <TableCell align="center">
                   <IconButton color="primary" onClick={() => handleEditTask(task.id)}>
                     <Edit />
@@ -136,41 +155,27 @@ const ManageTasks = () => {
             boxShadow: 24,
           }}
         >
-          <Typography variant="h6" gutterBottom>Add New Task</Typography>
+          <Typography variant="h6" gutterBottom>
+            Add New Task
+          </Typography>
           <TextField
             fullWidth
-            label="Task Title"
-            name="title"
+            label="Description"
+            name="description"
             variant="outlined"
             sx={{ mb: 2 }}
-            value={newTask.title}
+            value={newTask.description}
             onChange={handleInputChange}
             required
           />
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Assigned To</InputLabel>
-            <Select
-              name="assignedTo"
-              value={newTask.assignedTo}
-              onChange={handleInputChange}
-              required
-            >
-              {students.map(student => (
-                <MenuItem key={student.id} value={student.name}>
-                  {student.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
           <TextField
             fullWidth
-            label="Deadline"
-            name="deadline"
+            label="Student Roll no"
+            name="student_roll_no"
             variant="outlined"
-            type="date"
-            InputLabelProps={{ shrink: true }}
+            type="number"
             sx={{ mb: 2 }}
-            value={newTask.deadline}
+            value={newTask.student_roll_no}
             onChange={handleInputChange}
             required
           />

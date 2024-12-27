@@ -22,6 +22,8 @@ const homeRoutes = require("./routes/homeRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const assignStudentsRoutes = require("./routes/assignStudentRoutes");
+const taskRoutes = require("./routes/taskRoutes");
+
 const port = 3001;
 
 // used by body parser to parse the user posted data in json format
@@ -36,6 +38,7 @@ app.use("/home",homeRoutes);
 app.use("/admin",adminRoutes);
 app.use("/projects",projectRoutes);
 app.use("/assign",assignStudentsRoutes);
+app.use("/tasks",taskRoutes);
 
 app.get('/', (req, res) => {
   res.send('Hello World!');

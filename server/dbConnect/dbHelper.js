@@ -105,7 +105,7 @@ class DbHelper{
 
     async getAllMentors(){
         try{
-            const result = await this.client.query("SELECT * FROM mentor");
+            const result = await this.client.query("SELECT * FROM mentor order by mentorId asc");
             console.log(result.rows);
             return result.rows;
         }catch(error){
@@ -252,9 +252,10 @@ class DbHelper{
 
     async getAssignedTask(project_id){
         try{
-            const result = await this.client.query("SELECT * FROM task WHERE project_id = $1",[project_id]);
-            console.log(result.rows[0]);
-            return result.rows[0];
+            console.log(project_id);
+            const result = await this.client.query("SELECT * FROM task WHERE task.project_id = $1",[project_id]);
+            console.log(result.rows);
+            return result.rows;
         }catch(error){
             console.log(error);
         }

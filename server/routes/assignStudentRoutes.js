@@ -35,16 +35,36 @@ router.post("/delete-assigned-project", async (req, res) => {
     }
 });
 
+router.post("/get-tasks", async (req, res) => {
+    const client = await pool.connect();
+    const dbHelper = new DbHelper(client);
+    try{
+        const {project_id} = req.body;
+        console.log(req.body);
+        const result = await dbHelper.getAssignedTask(project_id);
+        return res.status(200).send(result);
+    }catch(error){
+        return res.status(400).send({
+            message: "Error while getting tasks"
+        });
+    }finally{
+        await dbHelper.releaseClient();
+    }
+})
+
 router.post("/add-task", async (req, res) => {
     const client = await pool.connect();
     const dbHelper = new DbHelper(client);
     try{
         const {project_id, student_roll_no, description} = req.body;
         const result = await dbHelper.assignTask(project_id, student_roll_no, description);
-        res.send(result);
+        return res.status(200).send(result);
     }catch(error){
         console.log(error);
         console.log("Error while adding task");
+        return res.status(400).send({
+            message: "Error while adding task"
+        });
     }finally{
         await dbHelper.releaseClient();
     }
