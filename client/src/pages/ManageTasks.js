@@ -15,15 +15,22 @@ import {
   TextField,
 } from '@mui/material';
 import { Edit, Delete } from '@mui/icons-material';
+import { DemoContainer } from '@mui/x-date-pickers/internals/demo';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import axios from 'axios';
+import { useParams } from 'react-router-dom';
 
 const ManageTasks = () => {
+  const { id } = useParams(); // Extract project_id from URL
+  console.log(id);
   const [tasks, setTasks] = useState([]);
   const [students] = useState([
   ]);
 
   const [openModal, setOpenModal] = useState(false);
-  const [newTask, setNewTask] = useState({ student_roll_no: '', description: '' });
+  const [newTask, setNewTask] = useState({ student_roll_no: '', description: '' ,duedate:null});
 
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => setOpenModal(false);
@@ -31,7 +38,7 @@ const ManageTasks = () => {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await axios.post('http://localhost:3001/assign/get-tasks', { project_id: 3 });
+        const response = await axios.post('http://localhost:3001/assign/get-tasks', { project_id: id });
         const data = response.data;
 
         if (!data || data.length === 0) {
@@ -41,8 +48,10 @@ const ManageTasks = () => {
         console.log(data);
         const newArray = data.map((task,index) => ({
           id: index+1,
+          task_id: task.task_id,
           description: task.description,
           student_roll_no: task.student_roll_no,
+          duedate: task.duedate
         }));
         setTasks(newArray);
         console.log("set modeule",newArray);
@@ -61,9 +70,10 @@ const ManageTasks = () => {
 
     try {
       const res = await axios.post('http://localhost:3001/assign/add-task', {
-        project_id: 3,
+        project_id: id,
         description: newTask.description,
         student_roll_no: newTask.student_roll_no,
+        duedate: newTask.duedate
       });
       console.log('Task added:', res.data);
 
@@ -84,13 +94,13 @@ const ManageTasks = () => {
   };
 
   // check deletion logic
-  const handleDeleteTask = async (id) => {
+  const handleDeleteTask = async (task_id) => {
     const confirmDelete = window.confirm('Are you sure you want to delete this task?');
     if (confirmDelete) {
       try {
-        await axios.post('http://localhost:3001/assign/delete-task', { project_id: 3, student_roll_no: tasks[id-1].student_roll_no });
-        setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
-        console.log(`Task with ID ${id} deleted.`);
+        await axios.post('http://localhost:3001/assign/delete-task', { task_id: task_id });
+        setTasks((prevTasks) => prevTasks.filter((task) => task.task_id !== task_id));
+        console.log(`Task with ID ${task_id} deleted.`);
       } catch (error) {
         console.error('Error deleting task:', error);
       }
@@ -117,6 +127,8 @@ const ManageTasks = () => {
               <TableCell>ID</TableCell>
               <TableCell>Description</TableCell>
               <TableCell>Student Roll No</TableCell>
+              <TableCell>Due Date</TableCell>
+              <TableCell>Status</TableCell>
               <TableCell align="center">Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -126,11 +138,17 @@ const ManageTasks = () => {
                 <TableCell>{task.id}</TableCell>
                 <TableCell>{task.description}</TableCell>
                 <TableCell>{task.student_roll_no}</TableCell>
+                <TableCell>{task.duedate}</TableCell>
+                <TableCell>
+                <Typography variant="body2" color={new Date(task.duedate) < new Date() ? 'red' : 'green'}>
+                  {new Date(task.duedate) < new Date() ? 'Overdue' : 'On Time'}
+                </Typography>
+                </TableCell>
                 <TableCell align="center">
-                  <IconButton color="primary" onClick={() => handleEditTask(task.id)}>
+                  <IconButton color="primary" onClick={() => handleEditTask(task.task_id)}>
                     <Edit />
                   </IconButton>
-                  <IconButton color="secondary" onClick={() => handleDeleteTask(task.id)}>
+                  <IconButton color="secondary" onClick={() => handleDeleteTask(task.task_id)}>
                     <Delete />
                   </IconButton>
                 </TableCell>
@@ -179,6 +197,18 @@ const ManageTasks = () => {
             onChange={handleInputChange}
             required
           />
+         
+         <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <DatePicker
+            label="duedate"
+            value={newTask.duedate} // Bind the value to the state
+            onChange={(newValue) => {
+              setNewTask((prev) => ({ ...prev, duedate: newValue })); // Update the state with the selected date
+            }}
+            renderInput={(params) => <TextField {...params} fullWidth sx={{ mb: 2 }} />}
+          />
+        </LocalizationProvider>
+
           <Button variant="contained" color="primary" onClick={handleAddTask}>
             Save Task
           </Button>

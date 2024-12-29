@@ -56,8 +56,8 @@ router.post("/add-task", async (req, res) => {
     const client = await pool.connect();
     const dbHelper = new DbHelper(client);
     try{
-        const {project_id, student_roll_no, description} = req.body;
-        const result = await dbHelper.assignTask(project_id, student_roll_no, description);
+        const {project_id, student_roll_no, description, duedate} = req.body;
+        const result = await dbHelper.assignTask(project_id, student_roll_no, description,duedate);
         return res.status(200).send(result);
     }catch(error){
         console.log(error);
@@ -74,8 +74,8 @@ router.post("/delete-task", async (req, res) => {
     const client = await pool.connect();
     const dbHelper = new DbHelper(client);
     try{
-        const {project_id,student_roll_no} = req.body;
-        const result = await dbHelper.deleteAssignedTask(project_id,student_roll_no);
+        const {task_id} = req.body;
+        const result = await dbHelper.deleteAssignedTask(task_id);
         res.send(result);
     }catch(error){
         console.log(error);

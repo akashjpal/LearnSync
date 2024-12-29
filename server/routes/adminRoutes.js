@@ -20,6 +20,22 @@ router.get("/get-all-students", async (req, res) => {
     }
 });
 
+router.post("/get-student", async (req, res) => {
+    const client = await pool.connect();
+    const dbHelper = new DbHelper(client);
+    try{
+        const {roll_no} = req.body;
+        const result = await dbHelper.getStudent(roll_no);
+        return res.status(200).send(result);
+    }catch(error){
+        return res.status(400).send({
+            message: "Error while getting student"
+        });
+    }finally{
+        await dbHelper.releaseClient();
+    }
+})
+
 router.post("/add-student", async (req, res) => {
     const client = await pool.connect();
     const dbHelper = new DbHelper(client);

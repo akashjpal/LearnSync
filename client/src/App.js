@@ -20,7 +20,7 @@ const App = () => {
         <Route path="/mentor-dashboard" element={<MentorDashboard />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/edit-tasks/:rollNumber" element={<EditTask />} />
-        <Route path="/manage-tasks" element={<ManageTasks />} /> 
+        <Route path="/manage-tasks/:id" element={<ManageTasks />} /> 
         <Route path="/admin/add-student" element={<AddStudent />} />
         <Route path="/admin/add-mentor" element={<AddMentor />} />
     

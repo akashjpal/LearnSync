@@ -239,9 +239,9 @@ class DbHelper{
     }
 
     // To assign tasks to students
-    async assignTask(project_id, student_roll_no,description){
+    async assignTask(project_id, student_roll_no,description, duedate){
         try{
-            const result = await this.client.query("INSERT INTO task (project_id, student_roll_no,description) VALUES ($1,$2,$3)",[project_id, student_roll_no,description]);
+            const result = await this.client.query("INSERT INTO task (project_id, student_roll_no,description,duedate) VALUES ($1,$2,$3,$4)",[project_id, student_roll_no,description,duedate]);
             console.log(result);
             return result;
         }catch(error){
@@ -270,9 +270,9 @@ class DbHelper{
             console.log("Error while updating assigned task");
         }
     }
-    async deleteAssignedTask(project_id, student_roll_no){
+    async deleteAssignedTask(task_id){
         try{
-            const result = await this.client.query("DELETE FROM task WHERE project_id = $1 AND student_roll_no = $2",[project_id, student_roll_no]);
+            const result = await this.client.query("DELETE FROM task WHERE task_id = $1",[task_id]);
             console.log(result);
             return result;
         }catch(error){
