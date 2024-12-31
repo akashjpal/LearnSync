@@ -20,6 +20,22 @@ router.post("/get-projects", async (req, res) => {
     }
 })
 
+router.post("/get-project-with-id", async (req, res) => {
+    const client = await pool.connect();
+    const dbHelper = new DbHelper(client);
+    try{
+        const {project_id} = req.body;
+        const result = await dbHelper.getProject(project_id);
+        return res.status(200).send(result);
+    }catch(error){
+        return res.status(400).send({
+            message: "Error while getting project"
+        });
+    }finally{
+        await dbHelper.releaseClient();
+    }
+})
+
 router.post("/add-project", async (req, res) => {
     const client = await pool.connect();
     const dbHelper = new DbHelper(client);
@@ -49,6 +65,24 @@ router.post("/update-project", async (req, res) => {
         await dbHelper.releaseClient();
     }
 });
+
+router.post("/add-github-link",async (req,res) => {
+    const client = await pool.connect();
+    const dbHelper = new DbHelper(client);
+    try{
+        const {project_id, name, description, github_url} = req.body;
+        const result = await dbHelper.addGithubLink(project_id, name, description, github_url);
+        return res.status(200).send(result);
+    }catch(error){
+        console.log(error);
+        console.log("Error while adding github link");
+        return res.status(400).send({
+            message: "Error while adding github link"
+        });
+    }finally{
+        await dbHelper.releaseClient();
+    }
+})
 
 router.post("/delete-project", async (req, res) => {
     const client = await pool.connect();

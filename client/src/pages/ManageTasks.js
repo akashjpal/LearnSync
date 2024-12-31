@@ -21,8 +21,11 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
+import { getStandardDate } from '../helpers/getDate';
+import { useNavigate } from 'react-router-dom';
 
 const ManageTasks = () => {
+  const navigate = useNavigate();
   const { id } = useParams(); // Extract project_id from URL
   console.log(id);
   const [tasks, setTasks] = useState([]);
@@ -76,7 +79,7 @@ const ManageTasks = () => {
         duedate: newTask.duedate
       });
       console.log('Task added:', res.data);
-
+      assignMentorStudent(newTask.student_roll_no);
       setNewTask({ student_roll_no: '', description: '' });
       handleCloseModal();
     } catch (error) {
@@ -84,13 +87,28 @@ const ManageTasks = () => {
     }
   };
 
+  async function assignMentorStudent(student_roll_no) {
+    try{
+      const res = await axios.post('http://localhost:3001/admin/assign-mentor-students', {
+        mentor_id: 1,
+        student_roll_no: student_roll_no
+      });
+      console.log(res);
+
+    }catch(error){
+      console.log(error);
+    }
+  }
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewTask((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleEditTask = (id) => {
-    alert(`Edit task with ID: ${id}`);
+    // alert(`Edit task with ID: ${id}`);
+    console.log(`Edit task with ID: ${id}`);
+    navigate(`/edit-task/${id}`);
   };
 
   // check deletion logic
@@ -138,7 +156,7 @@ const ManageTasks = () => {
                 <TableCell>{task.id}</TableCell>
                 <TableCell>{task.description}</TableCell>
                 <TableCell>{task.student_roll_no}</TableCell>
-                <TableCell>{task.duedate}</TableCell>
+                <TableCell>{getStandardDate(task.duedate)}</TableCell>
                 <TableCell>
                 <Typography variant="body2" color={new Date(task.duedate) < new Date() ? 'red' : 'green'}>
                   {new Date(task.duedate) < new Date() ? 'Overdue' : 'On Time'}

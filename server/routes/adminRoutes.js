@@ -90,7 +90,24 @@ router.post("/delete-student", async (req, res) => {
 });
 
 // Mentor related code
-
+router.post("/assign-mentor-students", async (req, res) => {
+    const client = await pool.connect();
+    const dbHelper = new DbHelper(client);
+    try{
+        const {mentor_id,student_roll_no} = req.body;
+        const result = await dbHelper.assignMentor(mentor_id,student_roll_no);
+        console.log(result);
+        res.status(200).send(result);
+    }catch(error){
+        console.log(error);
+        console.log("Error while assigning student");
+        res.status(400).send({
+            message: "Error while assigning student"
+        });
+    }finally{
+        await dbHelper.releaseClient();
+    }
+});
 router.get("/get-all-mentors", async (req, res) => {
     const client = await pool.connect();
     const dbHelper = new DbHelper(client);
@@ -100,6 +117,23 @@ router.get("/get-all-mentors", async (req, res) => {
     }catch(error){
         return res.status(400).send({
             message: "Error while getting students"
+        });
+    }finally{
+        await dbHelper.releaseClient();
+    }
+});
+
+router.post("/get-mentor", async (req, res) => {
+    const client = await pool.connect();
+    const dbHelper = new DbHelper(client);
+    try{
+        console.log(req.body);
+        const {mentorid} = req.body;
+        const result = await dbHelper.getMentor(mentorid);
+        return res.status(200).send(result);
+    }catch(error){
+        return res.status(400).send({
+            message: "Error while getting mentor"
         });
     }finally{
         await dbHelper.releaseClient();

@@ -52,6 +52,23 @@ router.post("/get-tasks", async (req, res) => {
     }
 })
 
+router.post("/get-tasks-with-id", async (req, res) => {
+    const client = await pool.connect();
+    const dbHelper = new DbHelper(client);
+    try{
+        const {task_id} = req.body;
+        console.log(req.body);
+        const result = await dbHelper.getAssignedTaskWithId(task_id);
+        return res.status(200).send(result);
+    }catch(error){
+        return res.status(400).send({
+            message: "Error while getting tasks"
+        });
+    }finally{
+        await dbHelper.releaseClient();
+    }
+});
+
 router.post("/add-task", async (req, res) => {
     const client = await pool.connect();
     const dbHelper = new DbHelper(client);
@@ -89,16 +106,54 @@ router.post("/edit-task", async (req, res) => {
     const client = await pool.connect();
     const dbHelper = new DbHelper(client);
     try{
-        const {project_id, student_roll_no, description} = req.body;
-        const result = await dbHelper.editTask(project_id, student_roll_no, description);
-        res.send(result);
+        console.log(req.body);
+        const {task_id,description,duedate} = req.body;
+        const result = await dbHelper.editTask(task_id, description, duedate);
+        return res.status(200).send(result);
     }catch(error){
         console.log(error);
         console.log("Error while editing task");
+        return res.status(400).send({
+            message: "Error while editing task"
+        });
     }finally{
         await dbHelper.releaseClient();
     }
 });
+
+router.post("/get-students-tasks", async (req, res) => {
+    const client = await pool.connect();
+    const dbHelper = new DbHelper(client);
+    try{
+        const {roll_no} = req.body;
+        const result = await dbHelper.getAssignedStudentTask(roll_no);
+        return res.status(200).send(result);
+    }catch(error){
+        return res.status(400).send({
+            message: "Error while getting students"
+        });
+    }finally{
+        await dbHelper.releaseClient();
+    }
+});
+
+router.post("/task-status-update", async (req, res) => {
+    const client = await pool.connect();
+    const dbHelper = new DbHelper(client);
+    try{
+        console.log(req.body);
+        const {task_id, status} = req.body;
+        const result = await dbHelper.updateTaskStatus(task_id, status);
+        return res.status(200).send(result);
+    }catch(error){
+        return res.status(400).send({
+            message: "Error while updating task status"
+        });
+    }finally{
+        await dbHelper.releaseClient();
+    }
+});
+
 
 
 module.exports = router;

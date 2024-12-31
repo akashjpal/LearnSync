@@ -124,6 +124,17 @@ class DbHelper{
         }
     };
 
+    async assignMentor(mentorId, student_roll_no){
+        try{
+            const result = await this.client.query("UPDATE student SET mentorid = $1 WHERE roll_no = $2",[mentorId, student_roll_no]);
+            console.log(result);
+            return result;
+        }catch(error){
+            console.log(error);
+            console.log("Error while assigning mentor");
+        }
+    }
+
     async getMentor(mentorId){
         try{
             const result = await this.client.query("SELECT * FROM mentor WHERE mentorId = $1",[mentorId]);
@@ -250,6 +261,27 @@ class DbHelper{
         }
     }
 
+    async getAssignedStudentTask(student_roll_no){
+        try{
+            const result = await this.client.query("SELECT * FROM task WHERE task.student_roll_no = $1",[student_roll_no]);
+            console.log(result.rows);
+            return result.rows;
+        }catch(error){
+            console.log(error);
+        }
+    }
+
+    async updateTaskStatus(task_id, status){
+        try{
+            const result = await this.client.query("UPDATE task SET status = $2 WHERE task_id = $1",[task_id, status]);
+            console.log(result);
+            return result;
+        }catch(error){
+            console.log(error);
+            console.log("Error while updating task status");
+        }
+    }
+
     async getAssignedTask(project_id){
         try{
             console.log(project_id);
@@ -260,9 +292,21 @@ class DbHelper{
             console.log(error);
         }
     }
-    async editAssignedTask(project_id, student_roll_no,description){
+    async getAssignedTaskWithId(task_id){
         try{
-            const result = await this.client.query("UPDATE task SET description = $3 WHERE project_id = $1 AND student_roll_no = $2",[project_id, student_roll_no,description]);
+            // console.log("")
+            console.log(task_id)
+            const result = await this.client.query("SELECT * FROM task WHERE task_id = $1",[task_id]);
+            console.log(result.rows[0]);
+            return result.rows[0];
+        }catch(error){
+            console.log(error);
+        }
+    }
+    async editTask(id, description,duedate){
+        try{
+            console.log(id,duedate,description);
+            const result = await this.client.query("UPDATE task SET description = $2, duedate = $3 WHERE task_id = $1",[id, description,duedate]);
             console.log(result);
             return result;
         }catch(error){
@@ -280,9 +324,43 @@ class DbHelper{
             console.log("Error while deleting assigned task");
         }
     }
+    async addGithubLink(project_id, name, description, github_url){
+        try{
+            const result = await this.client.query("UPDATE project SET github_url = $4, name=$2, description=$3 WHERE project_id = $1",[project_id, name, description, github_url]);
+            console.log(result);
+            return result;
+        }catch(error){
+            console.log(error);
+            console.log("Error while adding github link");
+        }
+    }
+
+    async updatePasswordStudent(email, password){
+        try{
+            const result = await this.client.query("UPDATE student SET password = $2 WHERE email = $1",[email, password]);
+            console.log(result);
+            return result;
+        }catch(error){
+            console.log(error);
+            console.log("Error while updating password");
+        }
+    }
+
+    async updatePasswordMentor(email, password){
+        try{
+            const result = await this.client.query("UPDATE mentor SET password = $2 WHERE email = $1",[email, password]);
+            console.log(result);
+            return result;
+        }catch(error){
+            console.log(error);
+            console.log("Error while updating password");
+        }
+    }
+
     async releaseClient(){
         await this.client.release();
     }
+
 }
 
 

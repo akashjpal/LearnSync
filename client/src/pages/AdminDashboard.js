@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   Container,
   Typography,
@@ -20,43 +20,48 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
-import { Edit, Delete, Visibility, Add } from '@mui/icons-material';
-import { Link } from 'react-router-dom';
+import { Edit, Delete, Add } from '@mui/icons-material';
+import { Link, Navigate } from 'react-router-dom';
 import axios from 'axios';
+import { AuthContext } from '../Authecontext'; // Adjust the path based on your folder structure
 
 const AdminDashboard = () => {
-  const [students, setStudents] = useState([
-  ]);
-  const [mentors, setMentors] = useState([
-  ]);
+  const { user, loading } = useContext(AuthContext);
+  const [students, setStudents] = useState([]);
+  const [mentors, setMentors] = useState([]);
   const [deleteTarget, setDeleteTarget] = useState({ type: '', id: null });
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  useEffect(()=>{
-    async function fetchStudents(){
-      try{
+  useEffect(() => {
+    async function fetchStudents() {
+      try {
         const res = await axios.get(`http://localhost:3001/admin/get-all-students`);
         setStudents(res.data);
-      }catch(error){
-        console.log(error);
+      } catch (error) {
+        console.error(error);
       }
     }
-    async function fetchMentors(){
-      try{
+
+    async function fetchMentors() {
+      try {
         const res = await axios.get(`http://localhost:3001/admin/get-all-mentors`);
         setMentors(res.data);
-      }catch(error){
-        console.log(error);
+      } catch (error) {
+        console.error(error);
       }
     }
+
     fetchStudents();
     fetchMentors();
-  },[openDeleteDialog]);
+  }, [openDeleteDialog]);
+
+  // Redirect if the user is not an admin or still loading
+  if (loading) return <div>Loading...</div>;
+  if (!user || user.role !== 'admin') return <Navigate to="/" replace />;
 
  
-
-  const handleDeleteDialogOpen = async (type, roll_no) => {
-    setDeleteTarget({ type, id: roll_no });
-    setOpenDeleteDialog(true); // No recursion
+  const handleDeleteDialogOpen = (type, id) => {
+    setDeleteTarget({ type, id });
+    setOpenDeleteDialog(true);
   };
 
   const handleDeleteDialogClose = () => {
@@ -64,24 +69,16 @@ const AdminDashboard = () => {
   };
 
   const handleDeleteConfirm = async () => {
-    if (deleteTarget.type === 'student') {
-      try {
-        const res = await axios.post(`http://localhost:3001/admin/delete-student`, { roll_no: deleteTarget.id });
-        console.log(res);
-        handleDeleteDialogClose();
-      } catch (error) {
-        console.log(error);
+    try {
+      if (deleteTarget.type === 'student') {
+        await axios.post(`http://localhost:3001/admin/delete-student`, { roll_no: deleteTarget.id });
+      } else {
+        await axios.post(`http://localhost:3001/admin/delete-mentor`, { mentorid: deleteTarget.id });
       }
-    }else{
-      try {
-        const res = await axios.post(`http://localhost:3001/admin/delete-mentor`, { mentorid: deleteTarget.id });
-        console.log(res);
-        handleDeleteDialogClose();
-      } catch (error) {
-        console.log(error);
-      }
+      handleDeleteDialogClose();
+    } catch (error) {
+      console.error(error);
     }
-    
   };
 
   return (
@@ -89,11 +86,31 @@ const AdminDashboard = () => {
       <Grid container spacing={4} sx={{ mt: 4 }}>
         <Grid item xs={12} sm={4} md={3}>
           <Paper elevation={3} sx={{ padding: 2, bgcolor: '#FFFFFF', borderRadius: 2, boxShadow: 1 }}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#4A90E2' }}>Admin Dashboard</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#4A90E2' }}>
+              Admin Dashboard
+            </Typography>
             <Divider sx={{ mb: 2 }} />
-            <Button component={Link} to="/student-dashboard" sx={{ width: '100%', justifyContent: 'flex-start', textTransform: 'none', color: '#333333' }}>Manage Students</Button>
-            <Button component={Link} to="/courses" sx={{ width: '100%', justifyContent: 'flex-start', textTransform: 'none', color: '#333333' }}>Manage Mentors</Button>
-            <Button component={Link} to="/account" sx={{ width: '100%', justifyContent: 'flex-start', textTransform: 'none', color: '#333333' }}>Manage Tasks</Button>
+            <Button
+              component={Link}
+              to="/student-dashboard"
+              sx={{ width: '100%', justifyContent: 'flex-start', textTransform: 'none', color: '#333333' }}
+            >
+              Manage Students
+            </Button>
+            <Button
+              component={Link}
+              to="/mentor-dashboard"
+              sx={{ width: '100%', justifyContent: 'flex-start', textTransform: 'none', color: '#333333' }}
+            >
+              Manage Mentors
+            </Button>
+            <Button
+              component={Link}
+              to="/manage-tasks"
+              sx={{ width: '100%', justifyContent: 'flex-start', textTransform: 'none', color: '#333333' }}
+            >
+              Manage Tasks
+            </Button>
           </Paper>
         </Grid>
 
@@ -102,7 +119,14 @@ const AdminDashboard = () => {
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
               <Typography variant="h5">Students and Mentors Management</Typography>
               <Box>
-                <Button variant="contained" color="primary" startIcon={<Add />} component={Link} to="/admin/add-student" sx={{ mr: 2 }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<Add />}
+                  component={Link}
+                  to="/admin/add-student"
+                  sx={{ mr: 2 }}
+                >
                   Add Student
                 </Button>
                 <Button variant="contained" color="secondary" startIcon={<Add />} component={Link} to="/admin/add-mentor">
@@ -112,7 +136,9 @@ const AdminDashboard = () => {
             </Box>
 
             {/* Students Table */}
-            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>Students List</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
+              Students List
+            </Typography>
             <Divider sx={{ mb: 2 }} />
             <TableContainer component={Paper}>
               <Table>
@@ -124,19 +150,19 @@ const AdminDashboard = () => {
                     <TableCell>Roll Number</TableCell>
                     <TableCell>Email</TableCell>
                     <TableCell>Password</TableCell>
-                    <TableCell align='center'>Action</TableCell>
+                    <TableCell align="center">Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {students.map((student,index) => (
+                  {students.map((student, index) => (
                     <TableRow key={index}>
-                      <TableCell>{index+1}</TableCell>
+                      <TableCell>{index + 1}</TableCell>
                       <TableCell>{student.name}</TableCell>
                       <TableCell>{student.course}</TableCell>
                       <TableCell>{student.roll_no}</TableCell>
                       <TableCell>{student.email}</TableCell>
                       <TableCell>{student.password}</TableCell>
-                      <TableCell align='center'>
+                      <TableCell align="center">
                         <IconButton color="primary" component={Link} to={`/admin/edit-student/${student.id}`}>
                           <Edit />
                         </IconButton>
@@ -151,7 +177,9 @@ const AdminDashboard = () => {
             </TableContainer>
 
             {/* Mentors Table */}
-            <Typography variant="h6" sx={{ fontWeight: 'bold', mt: 4 }}>Mentors List</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', mt: 4 }}>
+              Mentors List
+            </Typography>
             <Divider sx={{ mb: 2 }} />
             <TableContainer component={Paper}>
               <Table>
@@ -160,16 +188,16 @@ const AdminDashboard = () => {
                     <TableCell>ID</TableCell>
                     <TableCell>Name</TableCell>
                     <TableCell>Department</TableCell>
-                    <TableCell>MentorId</TableCell>
-                    <TableCell>Mentor Email</TableCell>
-                    <TableCell>Mentor Password</TableCell>
-                    <TableCell align="center">Action</TableCell>
+                    <TableCell>Mentor ID</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell>Password</TableCell>
+                    <TableCell align="center">Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {mentors.map((mentor,index) => (
+                  {mentors.map((mentor, index) => (
                     <TableRow key={index}>
-                      <TableCell>{index+1}</TableCell>
+                      <TableCell>{index + 1}</TableCell>
                       <TableCell>{mentor.name}</TableCell>
                       <TableCell>{mentor.department}</TableCell>
                       <TableCell>{mentor.mentorid}</TableCell>
@@ -201,8 +229,12 @@ const AdminDashboard = () => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDeleteDialogClose} color="primary">Cancel</Button>
-          <Button onClick={handleDeleteConfirm} color="secondary">Delete</Button>
+          <Button onClick={handleDeleteDialogClose} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteConfirm} color="secondary">
+            Delete
+          </Button>
         </DialogActions>
       </Dialog>
     </Container>

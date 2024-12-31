@@ -18,7 +18,8 @@ router.post("/get-tasks", async (req, res) => {
     }finally{
         await dbHelper.releaseClient();
     }
-})
+});
+
 
 router.post("/", async (req, res) => {
     const client = await pool.connect();

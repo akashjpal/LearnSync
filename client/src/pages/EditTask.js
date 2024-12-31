@@ -8,96 +8,108 @@ import {
   Button,
   Box,
   Paper,
-  Grid,
 } from '@mui/material';
+import axios from 'axios';
+import { getStandardDate } from '../helpers/getDate';
 
 const EditTask = () => {
-  const { rollNumber } = useParams(); // Get the roll number from the URL
-  const [tasks, setTasks] = useState([]);
+  const { id } = useParams(); // Get the task ID from the URL
+  console.log(`Task ID: ${id}`);
+  const [task, setTask] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchTasks = async () => {
-      // Simulate fetching tasks based on roll number
-      const response = await new Promise((resolve) => {
-        setTimeout(() => {
-          resolve([
-            { id: 1, title: 'Task 1: Complete the project proposal', dueDate: '2024-11-10' },
-            { id: 2, title: 'Task 2: Implement feature X', dueDate: '2024-11-15' },
-          ]);
-        }, 1000);
-      });
-      setTasks(response);
-      setLoading(false);
+    const fetchTask = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.post(`http://localhost:3001/assign/get-tasks-with-id`, { task_id: id });
+        setTask(res.data);
+        console.log(res.data);
+      } catch (error) {
+        console.log(error);
+      }finally{
+        setLoading(false);
+      }
     };
 
-    fetchTasks();
-  }, [rollNumber]);
+    fetchTask();
+  }, [id]);
 
-  const handleEdit = (id, updatedTitle) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === id ? { ...task, title: updatedTitle } : task
-      )
-    );
+  const handleFieldChange = (field, value) => {
+    setTask((prevTask) => ({
+      ...prevTask,
+      [field]: value,
+    }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log('Updated Tasks:', tasks);
-    alert('Tasks have been updated!');
+    try {
+      const res = await axios.post(`http://localhost:3001/assign/edit-task`, task);
+      console.log(res);
+      alert('Task updated successfully!');
+    } catch (error) {
+      console.log(error);
+      alert('Failed to update task.');
+    }
+  };
+
+  const formatDateForInput = (date) => {
+    const jsDate = new Date(date); // Convert to JS Date object
+    return jsDate.toISOString().split('T')[0]; // Format to YYYY-MM-DD
   };
 
   if (loading) {
     return <Typography>Loading...</Typography>;
   }
 
+  if (!task) {
+    return <Typography>Task not found!</Typography>;
+  }
+
   return (
     <Container>
       <Typography variant="h4" gutterBottom>
-        Edit Tasks for Student Roll Number: {rollNumber}
+        Edit Task
       </Typography>
       <form onSubmit={handleSubmit}>
-        {tasks.map((task) => (
-          <Box key={task.id} sx={{ mb: 2 }}>
-            <TextField
-              label="Task Title"
-              defaultValue={task.title}
-              variant="outlined"
-              fullWidth
-              onChange={(e) => handleEdit(task.id, e.target.value)}
-            />
-            <TextField
-              label="Due Date"
-              type="date"
-              defaultValue={task.dueDate}
-              variant="outlined"
-              fullWidth
-              sx={{ mt: 1 }}
-              onChange={(e) => handleEdit(task.id, e.target.value)}
-            />
-          </Box>
-        ))}
-        <Button type="submit" variant="contained" color="primary">Save Tasks</Button>
+        <Box sx={{ mb: 2 }}>
+          <TextField
+            label="Task Description"
+            value={task.description}
+            variant="outlined"
+            fullWidth
+            onChange={(e) => handleFieldChange('description', e.target.value)}
+          />
+          <TextField
+            label="Due Date"
+            type="date"
+            value={task.duedate ? formatDateForInput(task.duedate) : ''}
+            variant="outlined"
+            fullWidth
+            sx={{ mt: 1 }}
+            onChange={(e) => handleFieldChange('duedate', e.target.value)}
+          />
+        </Box>
+        <Button type="submit" variant="contained" color="primary">
+          Save Task
+        </Button>
       </form>
 
-      {/* Timeline Section */}
+      {/* Task Details Section */}
       <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>
-        Task Timeline
+        Task Details
       </Typography>
-      <Grid container spacing={2}>
-        {tasks.map((task) => (
-          <Grid item xs={12} md={6} key={task.id}>
-            <Paper elevation={2} sx={{ padding: 2, bgcolor: '#E8F5E9' }}>
-              <Typography variant="h6">{task.title}</Typography>
-              <Typography variant="body2">Due Date: {task.dueDate}</Typography>
-              <Typography variant="body2" color={new Date(task.dueDate) < new Date() ? 'red' : 'green'}>
-                Status: {new Date(task.dueDate) < new Date() ? 'Overdue' : 'On Time'}
-              </Typography>
-            </Paper>
-          </Grid>
-        ))}
-      </Grid>
+      <Paper elevation={2} sx={{ padding: 2, bgcolor: '#E8F5E9' }}>
+        <Typography variant="h6">{task.description}</Typography>
+        <Typography variant="body2">Due Date: {getStandardDate(task.duedate)}</Typography>
+        <Typography
+          variant="body2"
+          color={new Date(task.duedate) < new Date() ? 'red' : 'green'}
+        >
+          Status: {new Date(task.duedate) < new Date() ? 'Overdue' : 'On Time'}
+        </Typography>
+      </Paper>
     </Container>
   );
 };

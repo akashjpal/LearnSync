@@ -21,6 +21,23 @@ import DialogActions from '@mui/material/DialogActions';
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 import { styled } from '@mui/material/styles';
+import { getStandardDate } from '../helpers/getDate';
+import LinearProgress from '@mui/material/LinearProgress';
+import { useNavigate } from 'react-router-dom';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import Slide from '@mui/material/Slide';
+import { TransitionProps } from '@mui/material/transitions';
+
+const Transition = React.forwardRef(function Transition(
+  props: TransitionProps & {
+    children: React.ReactElement<unknown>;
+  },
+  ref: React.Ref<unknown>,
+) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
+
 
 const BootstrapDialog = styled(Dialog)(({ theme }) => ({
   '& .MuiDialogContent-root': {
@@ -33,6 +50,8 @@ const BootstrapDialog = styled(Dialog)(({ theme }) => ({
 
 
 const MentorDashboard = () => {
+  const navigate = useNavigate();
+  const [mentor, setMentor] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,13 +61,57 @@ const MentorDashboard = () => {
     name:"",
     description:""
   })
+  const [mentorid, setMentorId] = useState(0);
+  const [updatePasswordVisibility, setUpdatePasswordVisibility] = useState(false);
+  const [userDetail, setUserDetail] = useState({
+      email: '',
+      newPassword: '',
+    });
+
+  const handleSubmit = async () => {
+    try {
+      const res = await axios.post('http://localhost:3001/auth/update-password-mentor', {
+        email: userDetail.email,
+        password: userDetail.newPassword,
+      });
+      console.log(res);
+      alert('Password updated successfully');
+    } catch (error) {
+      console.error('Error updating password:', error);
+      alert('Error updating password');
+    } finally {
+      setUpdatePasswordVisibility(false);
+    }
+  }
+
+  useEffect(() => {
+    async function verifyUser() {
+      try {
+        const res = await axios.get(`http://localhost:3001/auth/verify-token`, { withCredentials: true });
+        console.log(res.data);
+        if (res.data.status === 200) {
+          if (res.data.data.user.role === "mentor") {
+            console.log(res.data.data.user.data);
+            setMentorId(res.data.data.user.data.mentorid);
+            setUserDetail({ email: res.data.data.user.data.email,newPassword:'' });
+          }
+        }else if (res.data.status === 401 || res.data.status === 404) {
+          window.location.href = "/";
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    verifyUser();
+  }, []);
 
   useEffect(() => {
     async function fetchProjects() {
       try {
         const response = await axios.post('http://localhost:3001/projects/get-projects', {
-          mentorid: 1,
+          mentorid: mentorid,
         });
+        console.log(response.data);
         setProjects(response.data);
       } catch (error) {
         console.error('Error fetching projects:', error);
@@ -56,7 +119,7 @@ const MentorDashboard = () => {
     }
 
     fetchProjects();
-  }, [open]);
+  }, [open,mentorid]);
 
   useEffect(() => {
     async function fetchAllTasksAndStudents() {
@@ -97,7 +160,26 @@ const MentorDashboard = () => {
     if (projects.length > 0) {
       fetchAllTasksAndStudents();
     }
-  }, [projects]);
+  }, [projects,mentorid]);
+
+  useEffect(() => {
+    if (mentorid) {
+      async function fetchMentor() {
+        try {
+          const response = await axios.post('http://localhost:3001/admin/get-mentor', {
+            mentorid: mentorid,
+          });
+          console.log('Mentor Data:', response.data);
+          setMentor(response.data);
+        } catch (error) {
+          console.error('Error fetching mentor:', error);
+        }
+      }
+  
+      fetchMentor();
+    }
+  }, [mentorid]);
+  
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -123,7 +205,7 @@ const MentorDashboard = () => {
       const res = await axios.post('http://localhost:3001/projects/add-project', {
         name: newProject.name,
         description: newProject.description,
-        mentorid: 1
+        mentorid: mentorid
       });
       setNewProject({name:'',description:''})
       console.log(res);
@@ -149,7 +231,7 @@ const MentorDashboard = () => {
               <strong>Status: {task?.status || 'N/A'}</strong>
             </Typography>
             <Typography variant='body2'>
-              <strong>Assigned At: {task?.assigned_at || 'N/A'}</strong>
+              <strong>Assigned At: {getStandardDate(task?.assigned_at) || 'N/A'}</strong>
             </Typography>
             <Typography variant="body2">
               <strong>Student Name: {student?.name || 'N/A'}</strong>
@@ -168,11 +250,21 @@ const MentorDashboard = () => {
       });
   };
 
+  const getCompleted = (project_id) => {
+    const projectTasks = tasks.filter((task) => task.project_id === project_id);
+    if (projectTasks.length === 0) return 0; // Avoid division by zero
   
+    const completedTasks = projectTasks.filter((task) => task.status === 'completed');
+    return (completedTasks.length / projectTasks.length) * 100;
+  };  
 
   const handleSendNotification = (studentName) => {
     alert(`Notification sent to ${studentName}`);
   };
+
+  const handleUpdatePasswordVisibility = () => {
+    setUpdatePasswordVisibility(!updatePasswordVisibility);
+  }
 
   return (
     <Container maxWidth="lg" sx={{ bgcolor: '#F5F7FA', py: 4 }}>
@@ -180,21 +272,23 @@ const MentorDashboard = () => {
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
         <Avatar sx={{ width: 100, height: 100, bgcolor: 'grey.400' }}>M</Avatar>
         <Box sx={{ ml: 2 }}>
-          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>Mentor Name</Typography>
-          <Typography variant="body1" color="#666">Your Role: Mentor</Typography>
+          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+            {mentor?.name || 'Mentor Name'}
+          </Typography>
+          <Typography variant="body1" color="#666">
+            Department: {mentor?.department || 'Department not available'}
+          </Typography>
         </Box>
       </Box>
+
 
       <Grid container spacing={4} sx={{ mt: 4 }}>
         <Grid item xs={12} sm={4} md={3}>
           <Paper elevation={3} sx={{ padding: 2, bgcolor: '#FFFFFF', borderRadius: 2, boxShadow: 1 }}>
             <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#4A90E2' }}>Mentor Dashboard</Typography>
             <Divider sx={{ mb: 2 }} />
-            <Button component={Link} to="/student-dashboard" sx={{ width: '100%', justifyContent: 'flex-start', textTransform: 'none', color: '#333333' }}>My Profile</Button>
-            <Button component={Link} to="/students" sx={{ width: '100%', justifyContent: 'flex-start', textTransform: 'none', color: '#333333' }}>Students</Button>
-            <Button component={Link} to="/account" sx={{ width: '100%', justifyContent: 'flex-start', textTransform: 'none', color: '#333333' }}>My Account</Button>
-            <Button component={Link} to="/manage-tasks" sx={{ width: '100%', justifyContent: 'flex-start', textTransform: 'none', color: '#333333' }}>Manage Tasks</Button>
-          </Paper>
+            <Button sx={{ width: '100%', justifyContent: 'flex-start', textTransform: 'none', color: '#333333' }} onClick={()=>handleUpdatePasswordVisibility()}>Update Password</Button>
+            </Paper>
         </Grid>
 
         <Grid item xs={12} sm={8} md={9}>
@@ -210,6 +304,14 @@ const MentorDashboard = () => {
                 <Paper key={index} sx={{ padding: 2, mb: 2, bgcolor: '#E3F2FD' }}>
                   <Typography variant="body1" sx={{ fontWeight: 'bold' }}>Title: {project.name}</Typography>
                   <Typography variant="body2">Description: {project.description}</Typography>
+                  {
+                    project.github_url ?
+                  <Typography variant="body2">Github Link: <a target='_blank' href={`${project.github_url}`}>{project.name}</a></Typography>
+                  :
+                  <Typography variant="body2">Github Link: Not Available</Typography>
+                  }
+                  <Typography variant="body2">Progress: {getCompleted(project.project_id)}%</Typography>
+                  <LinearProgress  variant="determinate" value={getCompleted(project.project_id)} />
                   <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, mt: 4 }}>Taks Under Project</Typography>
                   {loading ? (
                     <Typography>Loading...</Typography>
@@ -303,6 +405,50 @@ const MentorDashboard = () => {
           </Button>
         </DialogActions>
       </BootstrapDialog>
+
+      <Dialog
+        fullScreen
+        open={updatePasswordVisibility}
+        onClose={handleUpdatePasswordVisibility}
+        TransitionComponent={Transition}
+      >
+        <AppBar sx={{ position: 'relative' }}>
+          <Toolbar>
+            <IconButton
+              edge="start"
+              color="inherit"
+              onClick={handleUpdatePasswordVisibility}
+              aria-label="close"
+            >
+              <CloseIcon />
+            </IconButton>
+            <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
+              Update Password
+            </Typography>
+            <Button autoFocus color="inherit" onClick={handleSubmit}>
+              save
+            </Button>
+          </Toolbar>
+        </AppBar>
+        <TextField
+          fullWidth
+          label="Email"
+          margin="normal"
+          type='email'
+          value={userDetail.email}
+          required
+          disabled
+        />
+        <TextField
+          fullWidth
+          label="New Password"
+          type="password"
+          margin="normal"
+          value={userDetail.newPassword}
+          onChange={(e) => setUserDetail({ ...userDetail, newPassword: e.target.value })}
+          required
+        />
+      </Dialog>
 
     </Container>
 

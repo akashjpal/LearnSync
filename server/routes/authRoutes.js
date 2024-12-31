@@ -72,6 +72,51 @@ router.get('/verify-token', async (req, res) => {
     }
 });
 
+
+router.post("/update-password", async (req, res) => {
+    const client = await pool.connect();
+    const dbHelper = new DbHelper(client);
+    try {
+        const { email, password } = req.body;
+        const existingUser = await dbHelper.getUser(email);
+        if (!existingUser) {
+            return res.status(404).send({
+                messgae: "User does not Exist! Try to Contact Admin"
+            });
+        }
+        // const hashedPassword = await bcrypt.hash(password, saltRounds);
+        const result = await dbHelper.updatePasswordStudent(email, password);
+        res.send(result);
+    } catch (error) {
+        console.log(error);
+        console.log("Error while updating password");
+    } finally {
+        await dbHelper.releaseClient();
+    }
+})
+
+router.post("/update-password-mentor", async (req, res) => {
+    const client = await pool.connect();
+    const dbHelper = new DbHelper(client);
+    try {
+        const { email, password } = req.body;
+        const existingUser = await dbHelper.getUser(email);
+        if (!existingUser) {
+            return res.status(404).send({
+                messgae: "User does not Exist! Try to Contact Admin"
+            });
+        }
+        // const hashedPassword = await bcrypt.hash(password, saltRounds);
+        const result = await dbHelper.updatePasswordMentor(email, password);
+        res.send(result);
+    } catch (error) {
+        console.log(error);
+        console.log("Error while updating password");
+    } finally {
+        await dbHelper.releaseClient();
+    }
+})
+
 router.get("/logout", async (req, res) => {
     res.clearCookie('user');
     res.send({
